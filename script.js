@@ -1,8 +1,4 @@
-console.log('=== DEBUG: Verificando botones ===');
-console.log('¿Existe add-round-creation?', document.getElementById('add-round-creation'));
-console.log('¿Existe rounds-creation-list?', document.getElementById('rounds-creation-list'));
-
-// ===== ALIAH APP - VERSIÓN FINAL =====
+// ===== ALIAH APP - VERSIÓN FINAL CORREGIDA =====
 class AliahApp {
     constructor() {
         // Sistema de datos unificado
@@ -1487,37 +1483,109 @@ class AliahApp {
         this.showStep(step);
     }
     
-        // ===== FUNCIÓN PARA AGREGAR RONDA (FALTANTE) =====
-        addRoundToCreation() {
-            const roundId = Date.now();
-            const roundNumber = this.creatingRoutine.rounds.length + 1;
-            
-            const newRound = {
-                id: roundId,
-                name: `Ronda ${roundNumber}`,
-                restTime: 60,
-                reps: 3,
-                exercises: []
-            };
-            
-            this.creatingRoutine.rounds.push(newRound);
-            this.renderRoundsCreation();
-            
-            // Desplazar al final de la lista
-            setTimeout(() => {
-                const container = document.getElementById('rounds-creation-list');
-                if (container) {
-                    const lastItem = container.lastElementChild;
-                    if (lastItem) {
-                        lastItem.scrollIntoView({ 
-                            behavior: 'smooth', 
-                            block: 'nearest' 
-                        });
+    addRoundToCreation() {
+        const roundId = Date.now();
+        const roundNumber = this.creatingRoutine.rounds.length + 1;
+        
+        const newRound = {
+            id: roundId,
+            name: `Ronda ${roundNumber}`,
+            restTime: 60,
+            reps: 3,
+            exercises: []
+        };
+        
+        this.creatingRoutine.rounds.push(newRound);
+        this.renderRoundsCreation();
+        
+        // Desplazar al final de la lista
+        setTimeout(() => {
+            const container = document.getElementById('rounds-creation-list');
+            if (container) {
+                const lastItem = container.lastElementChild;
+                if (lastItem) {
+                    lastItem.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'nearest' 
+                    });
+                }
+            }
+        }, 100);
+    }
+    
+    // ===== FUNCIÓN MEJORADA PARA AGREGAR EJERCICIO =====
+    addExerciseToRound(roundIndex) {
+        console.log('🔼 Agregando ejercicio a ronda:', roundIndex);
+        
+        if (!this.creatingRoutine.rounds[roundIndex]) {
+            console.error('❌ No existe la ronda en índice:', roundIndex);
+            return;
+        }
+        
+        const exerciseId = Date.now();
+        const exerciseNumber = this.creatingRoutine.rounds[roundIndex].exercises.length + 1;
+        
+        const newExercise = {
+            id: exerciseId,
+            name: `Ejercicio ${exerciseNumber}`,
+            type: 'time',
+            value: 30,
+            unit: 'seg'
+        };
+        
+        console.log('➕ Nuevo ejercicio:', newExercise);
+        this.creatingRoutine.rounds[roundIndex].exercises.push(newExercise);
+        
+        // Renderizar SOLO la ronda específica
+        this.renderSingleRound(roundIndex);
+        
+        // Enfocar en el nuevo campo de nombre
+        setTimeout(() => {
+            const container = document.getElementById('rounds-creation-list');
+            if (container) {
+                const roundElement = container.querySelector(`[data-round-index="${roundIndex}"]`);
+                if (roundElement) {
+                    const exerciseInputs = roundElement.querySelectorAll('.exercise-name');
+                    if (exerciseInputs.length > 0) {
+                        const lastInput = exerciseInputs[exerciseInputs.length - 1];
+                        lastInput.focus();
+                        lastInput.select();
                     }
                 }
-            }, 100);
-        }
+            }
+        }, 100);
+    }
     
+    // ===== FUNCIÓN MEJORADA PARA RENDERIZAR UNA RONDA ESPECÍFICA =====
+    renderSingleRound(roundIndex) {
+        const container = document.getElementById('rounds-creation-list');
+        if (!container) return;
+        
+        const round = this.creatingRoutine.rounds[roundIndex];
+        if (!round) return;
+        
+        // Encontrar el elemento de la ronda
+        const roundElement = container.querySelector(`[data-round-index="${roundIndex}"]`);
+        
+        if (!roundElement) {
+            // Si no existe, renderizar todas las rondas
+            this.renderRoundsCreation();
+            return;
+        }
+        
+        // Actualizar solo la sección de ejercicios de esta ronda
+        const exercisesContainer = roundElement.querySelector('.exercises-creation-list');
+        if (exercisesContainer) {
+            exercisesContainer.innerHTML = this.renderExercisesForRound(round, roundIndex);
+            
+            // Reconfigurar listeners solo para esta ronda
+            setTimeout(() => {
+                this.setupExerciseInputListeners(roundElement);
+            }, 50);
+        }
+    }
+    
+    // ===== FUNCIÓN MEJORADA PARA RENDERIZAR TODAS LAS RONDAS =====
     renderRoundsCreation() {
         const container = document.getElementById('rounds-creation-list');
         if (!container) {
@@ -1548,13 +1616,6 @@ class AliahApp {
                 <div class="round-creation-header">
                     <h5><i class="fas fa-redo"></i> ${round.name}</h5>
                     <div class="round-actions">
-                        <button class="btn-icon-small add-exercise-btn" 
-                                data-round-index="${roundIndex}"
-                                title="Agregar ejercicio"
-                                type="button">
-                            <i class="fas fa-plus"></i>
-                            <span>Agregar Ejercicio</span>
-                        </button>
                         <button class="btn-icon-small remove-round-btn" 
                                 data-round-index="${roundIndex}"
                                 title="Eliminar ronda"
@@ -1591,167 +1652,169 @@ class AliahApp {
             `;
             
             container.appendChild(roundElement);
+            
+            // Configurar listeners para esta ronda
+            setTimeout(() => {
+                this.setupExerciseInputListeners(roundElement);
+                this.setupRoundInputListeners(roundElement);
+            }, 100);
+        });
+    }
+    
+    // ===== FUNCIÓN MEJORADA PARA RENDERIZAR EJERCICIOS =====
+    renderExercisesForRound(round, roundIndex) {
+        if (round.exercises.length === 0) {
+            return `
+                <div class="exercises-header">
+                    <h6><i class="fas fa-dumbbell"></i> Ejercicios (0)</h6>
+                    <button class="btn-primary add-exercise-btn" 
+                            data-round-index="${roundIndex}"
+                            type="button">
+                        <i class="fas fa-plus"></i>
+                        <span>Agregar Primer Ejercicio</span>
+                    </button>
+                </div>
+                
+                <div class="empty-exercises">
+                    <i class="fas fa-dumbbell"></i>
+                    <p>No hay ejercicios en esta ronda</p>
+                </div>
+            `;
+        }
+        
+        let exercisesHTML = `
+            <div class="exercises-header">
+                <h6><i class="fas fa-dumbbell"></i> Ejercicios (${round.exercises.length})</h6>
+                <button class="btn-primary add-exercise-btn" 
+                        data-round-index="${roundIndex}"
+                        type="button">
+                    <i class="fas fa-plus"></i>
+                    <span>Agregar Ejercicio</span>
+                </button>
+            </div>
+        `;
+        
+        round.exercises.forEach((exercise, exerciseIndex) => {
+            exercisesHTML += `
+                <div class="exercise-creation-item" data-exercise-index="${exerciseIndex}">
+                    <div class="exercise-drag-handle">
+                        <i class="fas fa-grip-vertical"></i>
+                    </div>
+                    
+                    <div class="exercise-creation-info">
+                        <div class="exercise-input-group">
+                            <label>Nombre:</label>
+                            <input type="text" 
+                                class="exercise-name" 
+                                value="${this.escapeHtml(exercise.name || `Ejercicio ${exerciseIndex + 1}`)}" 
+                                placeholder="Ej: Flexiones"
+                                data-round-index="${roundIndex}"
+                                data-exercise-index="${exerciseIndex}"
+                                required>
+                        </div>
+                        
+                        <div class="exercise-meta-group">
+                            <div class="exercise-type-group">
+                                <label>Tipo:</label>
+                                <select class="exercise-type" 
+                                        data-round-index="${roundIndex}"
+                                        data-exercise-index="${exerciseIndex}">
+                                    <option value="time" ${exercise.type === 'time' ? 'selected' : ''}>Tiempo</option>
+                                    <option value="reps" ${exercise.type === 'reps' ? 'selected' : ''}>Repeticiones</option>
+                                </select>
+                            </div>
+                            
+                            <div class="exercise-value-group">
+                                <label>Valor:</label>
+                                <div class="value-input-wrapper">
+                                    <input type="number" 
+                                        class="exercise-value" 
+                                        value="${exercise.value || 30}" 
+                                        min="1" 
+                                        max="999"
+                                        data-round-index="${roundIndex}"
+                                        data-exercise-index="${exerciseIndex}"
+                                        required>
+                                    <span class="exercise-unit">
+                                        ${exercise.type === 'time' ? 'seg' : 'reps'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="exercise-actions">
+                        <button class="btn-icon-small move-exercise-up" 
+                                data-round-index="${roundIndex}"
+                                data-exercise-index="${exerciseIndex}"
+                                title="Mover arriba"
+                                type="button">
+                            <i class="fas fa-arrow-up"></i>
+                        </button>
+                        <button class="btn-icon-small move-exercise-down" 
+                                data-round-index="${roundIndex}"
+                                data-exercise-index="${exerciseIndex}"
+                                title="Mover abajo"
+                                type="button">
+                            <i class="fas fa-arrow-down"></i>
+                        </button>
+                        <button class="btn-icon-small remove-exercise-btn" 
+                                data-round-index="${roundIndex}"
+                                data-exercise-index="${exerciseIndex}"
+                                title="Eliminar ejercicio"
+                                type="button">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
         });
         
-        // Configurar listeners después de un breve delay
-        setTimeout(() => {
-            this.setupRoundsCreationEvents();
-            this.setupDirectInputListeners();
-        }, 100);
+        return exercisesHTML;
     }
     
-    setupRoundsCreationEvents() {
-        const container = document.getElementById('rounds-creation-list');
-        if (!container) return;
+    // ===== FUNCIÓN MEJORADA PARA CONFIGURAR EVENT LISTENERS DE EJERCICIOS =====
+    setupExerciseInputListeners(roundElement) {
+        const roundIndex = parseInt(roundElement.dataset.roundIndex);
         
-        // Event listener único para TODO el contenedor
-        container.addEventListener('click', this.handleRoundCreationClick.bind(this));
-        
-        // Configurar listeners DIRECTOS para inputs
-        this.setupDirectInputListeners();
-    }
-    
-    handleRoundCreationClick(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        // BOTÓN AGREGAR EJERCICIO (principal)
-        if (e.target.closest('.add-exercise-btn')) {
-            const btn = e.target.closest('.add-exercise-btn');
-            const roundIndex = parseInt(btn.dataset.roundIndex);
-            this.addExerciseToRound(roundIndex);
-            return;
-        }
-        
-        // BOTÓN AGREGAR EJERCICIO (inline)
-        if (e.target.closest('.add-exercise-inline-btn')) {
-            const btn = e.target.closest('.add-exercise-inline-btn');
-            const roundIndex = parseInt(btn.dataset.roundIndex);
-            this.addExerciseToRound(roundIndex);
-            return;
-        }
-        
-        // BOTÓN ELIMINAR RONDA
-        if (e.target.closest('.remove-round-btn')) {
-            const btn = e.target.closest('.remove-round-btn');
-            const roundIndex = parseInt(btn.dataset.roundIndex);
+        // 1. Botón Agregar Ejercicio (único por ronda)
+        const addExerciseBtn = roundElement.querySelector('.add-exercise-btn');
+        if (addExerciseBtn) {
+            // Remover listeners anteriores
+            const newBtn = addExerciseBtn.cloneNode(true);
+            addExerciseBtn.parentNode.replaceChild(newBtn, addExerciseBtn);
             
-            if (confirm('¿Eliminar esta ronda y todos sus ejercicios?')) {
-                this.creatingRoutine.rounds.splice(roundIndex, 1);
-                
-                // Renumerar rondas
-                this.creatingRoutine.rounds.forEach((round, index) => {
-                    round.name = `Ronda ${index + 1}`;
-                });
-                
-                this.renderRoundsCreation();
-            }
-            return;
-        }
-        
-        // BOTÓN MOVER EJERCICIO ARRIBA
-        if (e.target.closest('.move-exercise-up')) {
-            const btn = e.target.closest('.move-exercise-up');
-            const roundIndex = parseInt(btn.dataset.roundIndex);
-            const exerciseIndex = parseInt(btn.dataset.exerciseIndex);
-            
-            if (exerciseIndex > 0) {
-                const exercises = this.creatingRoutine.rounds[roundIndex].exercises;
-                [exercises[exerciseIndex], exercises[exerciseIndex - 1]] = 
-                [exercises[exerciseIndex - 1], exercises[exerciseIndex]];
-                this.renderRoundsCreation();
-            }
-            return;
-        }
-        
-        // BOTÓN MOVER EJERCICIO ABAJO
-        if (e.target.closest('.move-exercise-down')) {
-            const btn = e.target.closest('.move-exercise-down');
-            const roundIndex = parseInt(btn.dataset.roundIndex);
-            const exerciseIndex = parseInt(btn.dataset.exerciseIndex);
-            const exercises = this.creatingRoutine.rounds[roundIndex].exercises;
-            
-            if (exerciseIndex < exercises.length - 1) {
-                [exercises[exerciseIndex], exercises[exerciseIndex + 1]] = 
-                [exercises[exerciseIndex + 1], exercises[exerciseIndex]];
-                this.renderRoundsCreation();
-            }
-            return;
-        }
-        
-        // BOTÓN ELIMINAR EJERCICIO
-        if (e.target.closest('.remove-exercise-btn')) {
-            const btn = e.target.closest('.remove-exercise-btn');
-            const roundIndex = parseInt(btn.dataset.roundIndex);
-            const exerciseIndex = parseInt(btn.dataset.exerciseIndex);
-            
-            if (confirm('¿Eliminar este ejercicio?')) {
-                this.creatingRoutine.rounds[roundIndex].exercises.splice(exerciseIndex, 1);
-                this.renderRoundsCreation();
-            }
-            return;
-        }
-    }
-    
-    setupDirectInputListeners() {
-        // 1. TIEMPO DE DESCANSO
-        document.querySelectorAll('.round-rest-time').forEach(input => {
-            input.addEventListener('change', (e) => {
-                const roundIndex = parseInt(e.target.dataset.roundIndex);
-                const value = parseInt(e.target.value) || 60;
-                
-                if (value >= 10 && value <= 300) {
-                    this.creatingRoutine.rounds[roundIndex].restTime = value;
-                } else {
-                    e.target.value = this.creatingRoutine.rounds[roundIndex].restTime || 60;
-                    this.showValidationError('El tiempo de descanso debe estar entre 10 y 300 segundos');
-                }
+            // Agregar nuevo listener
+            newBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('🔼 Botón agregar ejercicio clickeado para ronda:', roundIndex);
+                this.addExerciseToRound(roundIndex);
             });
-        });
+        }
         
-        // 2. REPETICIONES DE RONDA
-        document.querySelectorAll('.round-reps-count').forEach(input => {
+        // 2. Inputs de ejercicio
+        roundElement.querySelectorAll('.exercise-name').forEach(input => {
             input.addEventListener('change', (e) => {
-                const roundIndex = parseInt(e.target.dataset.roundIndex);
-                const value = parseInt(e.target.value) || 3;
-                
-                if (value >= 1 && value <= 10) {
-                    this.creatingRoutine.rounds[roundIndex].reps = value;
-                } else {
-                    e.target.value = this.creatingRoutine.rounds[roundIndex].reps || 3;
-                    this.showValidationError('Las repeticiones deben estar entre 1 y 10');
-                }
-            });
-        });
-        
-        // 3. NOMBRE DE EJERCICIO
-        document.querySelectorAll('.exercise-name').forEach(input => {
-            input.addEventListener('change', (e) => {
-                const roundIndex = parseInt(e.target.dataset.roundIndex);
-                const exerciseIndex = parseInt(e.target.dataset.exerciseIndex);
+                const exIndex = parseInt(e.target.dataset.exerciseIndex);
                 const value = e.target.value.trim();
                 
                 if (value) {
-                    this.creatingRoutine.rounds[roundIndex].exercises[exerciseIndex].name = value;
-                } else {
-                    this.showValidationError('El ejercicio debe tener un nombre');
-                    e.target.focus();
+                    this.creatingRoutine.rounds[roundIndex].exercises[exIndex].name = value;
                 }
             });
         });
         
-        // 4. TIPO DE EJERCICIO
-        document.querySelectorAll('.exercise-type').forEach(select => {
+        roundElement.querySelectorAll('.exercise-type').forEach(select => {
             select.addEventListener('change', (e) => {
-                const roundIndex = parseInt(e.target.dataset.roundIndex);
-                const exerciseIndex = parseInt(e.target.dataset.exerciseIndex);
+                const exIndex = parseInt(e.target.dataset.exerciseIndex);
                 const value = e.target.value;
                 
-                const exercise = this.creatingRoutine.rounds[roundIndex].exercises[exerciseIndex];
+                const exercise = this.creatingRoutine.rounds[roundIndex].exercises[exIndex];
                 exercise.type = value;
                 exercise.unit = value === 'time' ? 'seg' : 'reps';
                 
-                // Actualizar la unidad visible
+                // Actualizar unidad visible
                 const unitSpan = e.target.closest('.exercise-creation-item').querySelector('.exercise-unit');
                 if (unitSpan) {
                     unitSpan.textContent = exercise.unit;
@@ -1759,506 +1822,102 @@ class AliahApp {
             });
         });
         
-        // 5. VALOR DEL EJERCICIO
-        document.querySelectorAll('.exercise-value').forEach(input => {
+        roundElement.querySelectorAll('.exercise-value').forEach(input => {
             input.addEventListener('change', (e) => {
-                const roundIndex = parseInt(e.target.dataset.roundIndex);
-                const exerciseIndex = parseInt(e.target.dataset.exerciseIndex);
-                const value = parseInt(e.target.value) || (this.creatingRoutine.rounds[roundIndex]?.exercises[exerciseIndex]?.type === 'time' ? 30 : 10);
+                const exIndex = parseInt(e.target.dataset.exerciseIndex);
+                const value = parseInt(e.target.value) || 30;
                 
                 if (value >= 1 && value <= 999) {
-                    this.creatingRoutine.rounds[roundIndex].exercises[exerciseIndex].value = value;
-                } else {
-                    const currentValue = this.creatingRoutine.rounds[roundIndex]?.exercises[exerciseIndex]?.value || 30;
-                    e.target.value = currentValue;
-                    this.showValidationError('El valor debe estar entre 1 y 999');
+                    this.creatingRoutine.rounds[roundIndex].exercises[exIndex].value = value;
+                }
+            });
+        });
+        
+        // 3. Botones de acciones de ejercicio
+        roundElement.querySelectorAll('.remove-exercise-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const exIndex = parseInt(btn.dataset.exerciseIndex);
+                
+                if (confirm('¿Eliminar este ejercicio?')) {
+                    this.creatingRoutine.rounds[roundIndex].exercises.splice(exIndex, 1);
+                    this.renderSingleRound(roundIndex);
+                }
+            });
+        });
+        
+        // 4. Botones para mover ejercicios
+        roundElement.querySelectorAll('.move-exercise-up').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const exIndex = parseInt(btn.dataset.exerciseIndex);
+                
+                if (exIndex > 0) {
+                    const exercises = this.creatingRoutine.rounds[roundIndex].exercises;
+                    [exercises[exIndex], exercises[exIndex - 1]] = 
+                    [exercises[exIndex - 1], exercises[exIndex]];
+                    this.renderSingleRound(roundIndex);
+                }
+            });
+        });
+        
+        roundElement.querySelectorAll('.move-exercise-down').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const exIndex = parseInt(btn.dataset.exerciseIndex);
+                const exercises = this.creatingRoutine.rounds[roundIndex].exercises;
+                
+                if (exIndex < exercises.length - 1) {
+                    [exercises[exIndex], exercises[exIndex + 1]] = 
+                    [exercises[exIndex + 1], exercises[exIndex]];
+                    this.renderSingleRound(roundIndex);
                 }
             });
         });
     }
     
-    // ===== FUNCIÓN CORREGIDA PARA AGREGAR EJERCICIO =====
-    addExerciseToRound(roundIndex) {
-        console.log('🔼 Agregando ejercicio a ronda:', roundIndex);
+    // ===== FUNCIÓN SEPARADA PARA INPUTS DE RONDA =====
+    setupRoundInputListeners(roundElement) {
+        const roundIndex = parseInt(roundElement.dataset.roundIndex);
         
-        if (!this.creatingRoutine.rounds[roundIndex]) {
-            console.error('❌ No existe la ronda en índice:', roundIndex);
-            return;
-        }
-        
-        const exerciseId = Date.now() + Math.random();
-        const exerciseNumber = this.creatingRoutine.rounds[roundIndex].exercises.length + 1;
-        
-        const newExercise = {
-            id: exerciseId,
-            name: `Ejercicio ${exerciseNumber}`,
-            type: 'time',
-            value: 30,
-            unit: 'seg'
-        };
-        
-        console.log('➕ Nuevo ejercicio:', newExercise);
-        this.creatingRoutine.rounds[roundIndex].exercises.push(newExercise);
-        
-        // Forzar re-render de la ronda específica
-        this.renderSingleRound(roundIndex);
-        
-        // Enfocar en el nuevo campo de nombre
-        setTimeout(() => {
-            const container = document.getElementById('rounds-creation-list');
-            if (container) {
-                const exerciseInputs = container.querySelectorAll(`[data-round-index="${roundIndex}"] .exercise-name`);
-                if (exerciseInputs.length > 0) {
-                    const lastInput = exerciseInputs[exerciseInputs.length - 1];
-                    lastInput.focus();
-                    lastInput.select();
+        // Tiempo de descanso
+        const restTimeInput = roundElement.querySelector('.round-rest-time');
+        if (restTimeInput) {
+            restTimeInput.addEventListener('change', (e) => {
+                const value = parseInt(e.target.value) || 60;
+                if (value >= 10 && value <= 300) {
+                    this.creatingRoutine.rounds[roundIndex].restTime = value;
                 }
-            }
-        }, 100);
-    }
-
-    // ===== FUNCIÓN MEJORADA PARA RENDERIZAR EJERCICIOS =====
-    renderExercisesForRound(round, roundIndex) {
-        // Si no hay ejercicios, mostrar botón "Agregar Primer Ejercicio"
-        let exercisesHTML = `
-            <div class="exercises-header">
-                <h6><i class="fas fa-dumbbell"></i> Ejercicios (${round.exercises.length})</h6>
-                <button class="btn-primary add-exercise-inline-btn" 
-                        data-round-index="${roundIndex}"
-                        type="button">
-                    <i class="fas fa-plus"></i>
-                    <span>Agregar Ejercicio</span>
-                </button>
-            </div>
-        `;
-        
-        round.exercises.forEach((exercise, exerciseIndex) => {
-            const exerciseName = exercise.name || `Ejercicio ${exerciseIndex + 1}`;
-            const exerciseValue = exercise.value || (exercise.type === 'time' ? 30 : 10);
-            const exerciseType = exercise.type || 'time';
-            const exerciseUnit = exercise.unit || (exerciseType === 'time' ? 'seg' : 'reps');
-            
-            exercisesHTML += `
-                <div class="exercise-creation-item" data-exercise-index="${exerciseIndex}">
-                    <div class="exercise-drag-handle">
-                        <i class="fas fa-grip-vertical"></i>
-                    </div>
-                    
-                    <div class="exercise-creation-info">
-                        <div class="exercise-input-group">
-                            <label>Nombre:</label>
-                            <input type="text" 
-                                class="exercise-name" 
-                                value="${this.escapeHtml(exerciseName)}" 
-                                placeholder="Ej: Flexiones"
-                                data-round-index="${roundIndex}"
-                                data-exercise-index="${exerciseIndex}"
-                                required>
-                        </div>
-                        
-                        <div class="exercise-meta-group">
-                            <div class="exercise-type-group">
-                                <label>Tipo:</label>
-                                <select class="exercise-type" 
-                                        data-round-index="${roundIndex}"
-                                        data-exercise-index="${exerciseIndex}">
-                                    <option value="time" ${exerciseType === 'time' ? 'selected' : ''}>Tiempo</option>
-                                    <option value="reps" ${exerciseType === 'reps' ? 'selected' : ''}>Repeticiones</option>
-                                </select>
-                            </div>
-                            
-                            <div class="exercise-value-group">
-                                <label>Valor:</label>
-                                <div style="display: flex; gap: 5px; align-items: center;">
-                                    <input type="number" 
-                                        class="exercise-value" 
-                                        value="${exerciseValue}" 
-                                        min="1" 
-                                        max="999"
-                                        data-round-index="${roundIndex}"
-                                        data-exercise-index="${exerciseIndex}"
-                                        style="flex: 1;"
-                                        required>
-                                    <span class="exercise-unit" style="min-width: 40px;">
-                                        ${exerciseUnit}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="exercise-actions">
-                        <button class="btn-icon-small move-exercise-up" 
-                                data-round-index="${roundIndex}"
-                                data-exercise-index="${exerciseIndex}"
-                                title="Mover arriba"
-                                type="button">
-                            <i class="fas fa-arrow-up"></i>
-                        </button>
-                        <button class="btn-icon-small move-exercise-down" 
-                                data-round-index="${roundIndex}"
-                                data-exercise-index="${exerciseIndex}"
-                                title="Mover abajo"
-                                type="button">
-                            <i class="fas fa-arrow-down"></i>
-                        </button>
-                        <button class="btn-icon-small remove-exercise-btn" 
-                                data-round-index="${roundIndex}"
-                                data-exercise-index="${exerciseIndex}"
-                                title="Eliminar ejercicio"
-                                type="button">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                </div>
-            `;
-        });
-        
-        
-        return exercisesHTML;
-    }
-
-    // ===== SISTEMA DE DESCANSOS CORREGIDO =====
-    showRestTimer(seconds) {
-        if (!seconds || seconds <= 0) {
-            this.nextExercise();
-            return;
+            });
         }
         
-        this.isResting = true;
-        
-        // Reproducir sonido de descanso
-        this.playRestSound();
-        
-        // Actualizar interfaz
-        const exerciseNameElement = document.getElementById('current-exercise-name');
-        const exerciseTimeElement = document.getElementById('current-exercise-time');
-        const typeElement = document.querySelector('.exercise-type');
-        const restTimerDisplay = document.getElementById('rest-timer-display');
-        
-        if (exerciseNameElement) {
-            exerciseNameElement.textContent = 'DESCANSO';
-            exerciseNameElement.style.color = '#FF9800';
-        }
-        
-        if (exerciseTimeElement) {
-            exerciseTimeElement.textContent = this.formatTime(seconds);
-            exerciseTimeElement.style.color = '#FF9800';
-        }
-        
-        if (typeElement) {
-            typeElement.textContent = 'Descanso';
-            typeElement.style.background = '#FF9800';
-        }
-        
-        if (restTimerDisplay) {
-            restTimerDisplay.style.display = 'flex';
-            const restTimeElement = document.getElementById('rest-time');
-            if (restTimeElement) {
-                restTimeElement.textContent = `${seconds}s`;
-            }
-        }
-        
-        this.timeLeft = seconds;
-        this.totalTime = seconds;
-        this.updateProgressBar();
-        
-        // Configurar temporizador de descanso
-        if (this.playlistTimer) {
-            clearInterval(this.playlistTimer);
-        }
-        
-        let restTimer = seconds;
-        this.playlistTimer = setInterval(() => {
-            if (this.isPlaying && this.isResting) {
-                restTimer--;
-                
-                // Actualizar tiempo de descanso
-                if (exerciseTimeElement) {
-                    exerciseTimeElement.textContent = this.formatTime(restTimer);
+        // Repeticiones
+        const repsInput = roundElement.querySelector('.round-reps-count');
+        if (repsInput) {
+            repsInput.addEventListener('change', (e) => {
+                const value = parseInt(e.target.value) || 3;
+                if (value >= 1 && value <= 10) {
+                    this.creatingRoutine.rounds[roundIndex].reps = value;
                 }
+            });
+        }
+        
+        // Botón eliminar ronda
+        const removeRoundBtn = roundElement.querySelector('.remove-round-btn');
+        if (removeRoundBtn) {
+            removeRoundBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 
-                if (restTimerDisplay) {
-                    const restTimeElement = document.getElementById('rest-time');
-                    if (restTimeElement) {
-                        restTimeElement.textContent = `${restTimer}s`;
-                    }
+                if (confirm('¿Eliminar esta ronda y todos sus ejercicios?')) {
+                    this.creatingRoutine.rounds.splice(roundIndex, 1);
+                    this.renderRoundsCreation();
                 }
-                
-                // Actualizar barra de progreso
-                this.updateProgressBar(((seconds - restTimer) / seconds) * 100);
-                
-                // Cuando termina el descanso
-                if (restTimer <= 0) {
-                    clearInterval(this.playlistTimer);
-                    this.isResting = false;
-                    
-                    // Restaurar colores
-                    if (exerciseNameElement) exerciseNameElement.style.color = '';
-                    if (exerciseTimeElement) exerciseTimeElement.style.color = '';
-                    if (typeElement) typeElement.style.background = '';
-                    if (restTimerDisplay) restTimerDisplay.style.display = 'none';
-                    
-                    // Pasar a la siguiente ronda o completar
-                    this.currentRoundIndex++;
-                    if (this.currentRoundIndex < this.currentRoutine.roundsData.length) {
-                        this.currentExerciseIndex = 0;
-                        this.startCurrentExercise();
-                    } else {
-                        this.completePlaylist();
-                    }
-                }
-            }
-        }, 1000);
-    }
-
-    // ===== EVENT LISTENERS CORREGIDOS =====
-    setupEventListeners() {
-        // ... (código existente) ...
-        
-    // ===== CREACIÓN DE RUTINAS - LISTENERS CORREGIDOS =====
-    document.addEventListener('click', (e) => {
-        // 1. BOTÓN AGREGAR RONDA
-        if (e.target.closest('#add-round-creation')) {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('🔼 Agregando nueva ronda');
-            this.addRoundToCreation();
-            return;
+            });
         }
-        
-        // 2. BOTÓN AGREGAR EJERCICIO (CUALQUIER TIPO)
-        if (e.target.closest('.add-first-exercise-btn') || 
-            e.target.closest('.add-another-exercise-btn') ||
-            e.target.closest('.add-exercise-inline-btn') ||
-            e.target.closest('.add-exercise-btn')) {
-            
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const btn = e.target.closest('.add-first-exercise-btn, .add-another-exercise-btn, .add-exercise-inline-btn, .add-exercise-btn');
-            if (!btn) return;
-            
-            const roundIndex = parseInt(btn.getAttribute('data-round-index'));
-            if (isNaN(roundIndex)) {
-                console.error('❌ No se pudo obtener roundIndex del botón');
-                return;
-            }
-            
-            console.log('🔼 Agregando ejercicio a ronda:', roundIndex);
-            this.addExerciseToRound(roundIndex);
-            return;
-        }
-        
-        // 3. BOTÓN GUARDAR RUTINA
-        if (e.target.closest('#save-routine-btn')) {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('💾 Guardando rutina...');
-            this.saveCreatedRoutine();
-            return;
-        }
-        
-        // ... (otros listeners) ...
-    });
-}
-    
-    renderSingleRound(roundIndex) {
-        const container = document.getElementById('rounds-creation-list');
-        if (!container) return;
-        
-        const roundElement = container.querySelector(`[data-round-index="${roundIndex}"]`);
-        if (!roundElement) {
-            // Si no existe, renderizar todas
-            this.renderRoundsCreation();
-            return;
-        }
-        
-        const round = this.creatingRoutine.rounds[roundIndex];
-        
-        // Actualizar solo el contenido de ejercicios
-        const exercisesContainer = roundElement.querySelector('.exercises-creation-list');
-        if (exercisesContainer) {
-            exercisesContainer.innerHTML = `
-                <div class="exercises-header">
-                    <h6><i class="fas fa-dumbbell"></i> Ejercicios (${round.exercises.length})</h6>
-                    <button class="btn-icon-small add-exercise-inline-btn" 
-                            data-round-index="${roundIndex}"
-                            title="Agregar ejercicio"
-                            type="button">
-                        <i class="fas fa-plus"></i>
-                        <span>Agregar Ejercicio</span>
-                    </button>
-                </div>
-                
-                ${this.renderExercisesForRound(round, roundIndex)}
-            `;
-            
-            // Reconfigurar listeners solo para esta ronda
-            setTimeout(() => {
-                this.setupDirectInputListeners();
-            }, 50);
-        }
-    }
-    
-    renderSingleRound(roundIndex) {
-        const container = document.getElementById('rounds-creation-list');
-        if (!container) return;
-        
-        const roundElement = container.querySelector(`[data-round-index="${roundIndex}"]`);
-        if (!roundElement) {
-            // Si no existe, renderizar todas
-            this.renderRoundsCreation();
-            return;
-        }
-        
-        const round = this.creatingRoutine.rounds[roundIndex];
-        
-        // Actualizar solo el contenido de ejercicios
-        const exercisesContainer = roundElement.querySelector('.exercises-creation-list');
-        if (exercisesContainer) {
-            exercisesContainer.innerHTML = `
-                <div class="exercises-header">
-                    <h6><i class="fas fa-dumbbell"></i> Ejercicios (${round.exercises.length})</h6>
-                    <button class="btn-icon-small add-exercise-inline-btn" 
-                            data-round-index="${roundIndex}"
-                            title="Agregar ejercicio"
-                            type="button">
-                        <i class="fas fa-plus"></i>
-                    </button>
-                </div>
-                
-                ${this.renderExercisesForRound(round, roundIndex)}
-            `;
-            
-            // Reconfigurar listeners solo para esta ronda
-            setTimeout(() => {
-                this.setupDirectInputListeners();
-            }, 50);
-        }
-    }
-    
-    renderExercisesForRound(round, roundIndex) {
-        // Si no hay ejercicios, mostrar botón "Agregar Primer Ejercicio"
-        if (round.exercises.length === 0) {
-            return `
-                <div class="empty-exercises">
-                    <i class="fas fa-dumbbell"></i>
-                    <p>No hay ejercicios en esta ronda</p>
-                    <button class="btn-primary add-first-exercise-btn" 
-                            data-round-index="${roundIndex}"
-                            type="button">
-                        <i class="fas fa-plus"></i>
-                        <span>Agregar Primer Ejercicio</span>
-                    </button>
-                </div>
-            `;
-        }
-        
-        let exercisesHTML = `
-            <div class="exercises-header">
-                <h6><i class="fas fa-dumbbell"></i> Ejercicios (${round.exercises.length})</h6>
-                <button class="btn-primary add-exercise-inline-btn" 
-                        data-round-index="${roundIndex}"
-                        type="button">
-                    <i class="fas fa-plus"></i>
-                    <span>Agregar Ejercicio</span>
-                </button>
-            </div>
-        `;
-        
-        round.exercises.forEach((exercise, exerciseIndex) => {
-            const exerciseName = exercise.name || `Ejercicio ${exerciseIndex + 1}`;
-            const exerciseValue = exercise.value || (exercise.type === 'time' ? 30 : 10);
-            const exerciseType = exercise.type || 'time';
-            const exerciseUnit = exercise.unit || (exerciseType === 'time' ? 'seg' : 'reps');
-            
-            exercisesHTML += `
-                <div class="exercise-creation-item" data-exercise-index="${exerciseIndex}">
-                    <div class="exercise-drag-handle">
-                        <i class="fas fa-grip-vertical"></i>
-                    </div>
-                    
-                    <div class="exercise-creation-info">
-                        <div class="exercise-input-group">
-                            <label>Nombre:</label>
-                            <input type="text" 
-                                class="exercise-name" 
-                                value="${this.escapeHtml(exerciseName)}" 
-                                placeholder="Ej: Flexiones"
-                                data-round-index="${roundIndex}"
-                                data-exercise-index="${exerciseIndex}"
-                                required>
-                        </div>
-                        
-                        <div class="exercise-meta-group">
-                            <div class="exercise-type-group">
-                                <label>Tipo:</label>
-                                <select class="exercise-type" 
-                                        data-round-index="${roundIndex}"
-                                        data-exercise-index="${exerciseIndex}">
-                                    <option value="time" ${exerciseType === 'time' ? 'selected' : ''}>Tiempo</option>
-                                    <option value="reps" ${exerciseType === 'reps' ? 'selected' : ''}>Repeticiones</option>
-                                </select>
-                            </div>
-                            
-                            <div class="exercise-value-group">
-                                <label>Valor:</label>
-                                <div style="display: flex; gap: 5px; align-items: center;">
-                                    <input type="number" 
-                                        class="exercise-value" 
-                                        value="${exerciseValue}" 
-                                        min="1" 
-                                        max="999"
-                                        data-round-index="${roundIndex}"
-                                        data-exercise-index="${exerciseIndex}"
-                                        style="flex: 1;"
-                                        required>
-                                    <span class="exercise-unit" style="min-width: 40px;">
-                                        ${exerciseUnit}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="exercise-actions">
-                        <button class="btn-icon-small move-exercise-up" 
-                                data-round-index="${roundIndex}"
-                                data-exercise-index="${exerciseIndex}"
-                                title="Mover arriba"
-                                type="button">
-                            <i class="fas fa-arrow-up"></i>
-                        </button>
-                        <button class="btn-icon-small move-exercise-down" 
-                                data-round-index="${roundIndex}"
-                                data-exercise-index="${exerciseIndex}"
-                                title="Mover abajo"
-                                type="button">
-                            <i class="fas fa-arrow-down"></i>
-                        </button>
-                        <button class="btn-icon-small remove-exercise-btn" 
-                                data-round-index="${roundIndex}"
-                                data-exercise-index="${exerciseIndex}"
-                                title="Eliminar ejercicio"
-                                type="button">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                </div>
-            `;
-        });
-        
-        // ⬇️ ELIMINAR ESTA SECCIÓN COMPLETA ⬇️
-        // No agregar el botón "Agregar Otro Ejercicio" al final
-        
-        return exercisesHTML; // ← Solo retornar el HTML sin el botón adicional
-    }
-    
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
     }
     
     saveCreatedRoutine() {
@@ -4157,6 +3816,12 @@ class AliahApp {
         }
     }
     
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
     // ===== EVENT LISTENERS =====
     setupEventListeners() {
         // ===== AUTENTICACIÓN =====
@@ -4361,9 +4026,9 @@ class AliahApp {
             });
         }
         
-        // Botón de agregar ronda (en vista creación)
+        // SIMPLIFICAR EL EVENT LISTENER PRINCIPAL
         document.addEventListener('click', (e) => {
-            // 1. BOTÓN AGREGAR RONDA
+            // 1. BOTÓN AGREGAR RONDA (principal)
             if (e.target.closest('#add-round-creation')) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -4372,30 +4037,7 @@ class AliahApp {
                 return;
             }
             
-            // 2. BOTÓN AGREGAR EJERCICIO (CUALQUIER TIPO)
-            if (e.target.closest('.add-first-exercise-btn') || 
-                e.target.closest('.add-another-exercise-btn') ||
-                e.target.closest('.add-exercise-inline-btn') ||
-                e.target.closest('.add-exercise-btn')) {
-                
-                e.preventDefault();
-                e.stopPropagation();
-                
-                const btn = e.target.closest('.add-first-exercise-btn, .add-another-exercise-btn, .add-exercise-inline-btn, .add-exercise-btn');
-                if (!btn) return;
-                
-                const roundIndex = parseInt(btn.getAttribute('data-round-index'));
-                if (isNaN(roundIndex)) {
-                    console.error('❌ No se pudo obtener roundIndex del botón');
-                    return;
-                }
-                
-                console.log('🔼 Agregando ejercicio a ronda:', roundIndex);
-                this.addExerciseToRound(roundIndex);
-                return;
-            }
-            
-            // 3. BOTÓN GUARDAR RUTINA
+            // 2. BOTÓN GUARDAR RUTINA
             if (e.target.closest('#save-routine-btn')) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -4404,97 +4046,30 @@ class AliahApp {
                 return;
             }
             
-            // 4. BOTÓN SIGUIENTE PASO
+            // 3. BOTONES DE PASOS
             if (e.target.closest('.next-step')) {
                 e.preventDefault();
                 e.stopPropagation();
                 const btn = e.target.closest('.next-step');
                 const step = btn.getAttribute('data-step');
-                console.log('➡️ Siguiente paso:', step);
                 this.goToStep(step);
                 return;
             }
             
-            // 5. BOTÓN PASO ANTERIOR
             if (e.target.closest('.prev-step')) {
                 e.preventDefault();
                 e.stopPropagation();
                 const btn = e.target.closest('.prev-step');
                 const step = btn.getAttribute('data-step');
-                console.log('⬅️ Paso anterior:', step);
                 this.showStep(step);
                 return;
             }
             
-            // 6. BOTÓN VOLVER A LISTA
+            // 4. BOTÓN VOLVER A LISTA
             if (e.target.closest('.back-to-list-btn')) {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('🔙 Volviendo a lista de rutinas');
                 this.showRoutineList();
-                return;
-            }
-            
-            // 7. BOTONES DE ELIMINAR/MOVER EJERCICIOS
-            if (e.target.closest('.remove-exercise-btn')) {
-                e.preventDefault();
-                e.stopPropagation();
-                const btn = e.target.closest('.remove-exercise-btn');
-                const roundIndex = parseInt(btn.getAttribute('data-round-index'));
-                const exerciseIndex = parseInt(btn.getAttribute('data-exercise-index'));
-                
-                if (confirm('¿Eliminar este ejercicio?')) {
-                    this.creatingRoutine.rounds[roundIndex].exercises.splice(exerciseIndex, 1);
-                    this.renderRoundsCreation();
-                }
-                return;
-            }
-            
-            // 8. BOTÓN ELIMINAR RONDA
-            if (e.target.closest('.remove-round-btn')) {
-                e.preventDefault();
-                e.stopPropagation();
-                const btn = e.target.closest('.remove-round-btn');
-                const roundIndex = parseInt(btn.getAttribute('data-round-index'));
-                
-                if (confirm('¿Eliminar esta ronda y todos sus ejercicios?')) {
-                    this.creatingRoutine.rounds.splice(roundIndex, 1);
-                    this.renderRoundsCreation();
-                }
-                return;
-            }
-            
-            // 9. BOTÓN MOVER EJERCICIO ARRIBA
-            if (e.target.closest('.move-exercise-up')) {
-                e.preventDefault();
-                e.stopPropagation();
-                const btn = e.target.closest('.move-exercise-up');
-                const roundIndex = parseInt(btn.getAttribute('data-round-index'));
-                const exerciseIndex = parseInt(btn.getAttribute('data-exercise-index'));
-                
-                if (exerciseIndex > 0) {
-                    const exercises = this.creatingRoutine.rounds[roundIndex].exercises;
-                    [exercises[exerciseIndex], exercises[exerciseIndex - 1]] = 
-                    [exercises[exerciseIndex - 1], exercises[exerciseIndex]];
-                    this.renderRoundsCreation();
-                }
-                return;
-            }
-            
-            // 10. BOTÓN MOVER EJERCICIO ABAJO
-            if (e.target.closest('.move-exercise-down')) {
-                e.preventDefault();
-                e.stopPropagation();
-                const btn = e.target.closest('.move-exercise-down');
-                const roundIndex = parseInt(btn.getAttribute('data-round-index'));
-                const exerciseIndex = parseInt(btn.getAttribute('data-exercise-index'));
-                const exercises = this.creatingRoutine.rounds[roundIndex].exercises;
-                
-                if (exerciseIndex < exercises.length - 1) {
-                    [exercises[exerciseIndex], exercises[exerciseIndex + 1]] = 
-                    [exercises[exerciseIndex + 1], exercises[exerciseIndex]];
-                    this.renderRoundsCreation();
-                }
                 return;
             }
         });
@@ -4506,16 +4081,6 @@ class AliahApp {
         
         // ===== EXPORTACIÓN DE DATOS =====
         this.addExportButtons();
-        
-        // DEBUG: Verificar que los elementos existen
-        setTimeout(() => {
-            console.log('🔍 DEBUG - Elementos en DOM:');
-            console.log('1. #add-round-creation:', document.getElementById('add-round-creation'));
-            console.log('2. #save-routine-btn:', document.getElementById('save-routine-btn'));
-            console.log('3. Botones .next-step:', document.querySelectorAll('.next-step').length);
-            console.log('4. Botones .prev-step:', document.querySelectorAll('.prev-step').length);
-            console.log('5. Botón .back-to-list-btn:', document.querySelector('.back-to-list-btn'));
-        }, 1000);
     }
     
     addExportButtons() {

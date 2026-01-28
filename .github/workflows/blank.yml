@@ -1,0 +1,21 @@
+name: Mantener Repositorio Activo
+
+on:
+  schedule:
+    # Se ejecuta a las 00:00 UTC cada 25 días
+    - cron: '0 0 */25 * *'
+  # También se ejecuta si lo activas manualmente
+  workflow_dispatch:
+
+jobs:
+  mantenimiento:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hacer commit de mantenimiento
+        run: |
+          date > fecha_ultimo_mantenimiento.txt
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'actions@github.com'
+          git add -A
+          git commit -m "Mantenimiento automático: $(date)" || echo "Sin cambios que commitear"
+          git push

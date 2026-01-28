@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AliahFIT - Entrenamiento Personal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Elementos de audio para sonidos -->
+    <audio id="exercise-start-sound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-unlock-game-notification-253.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="rest-start-sound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="complete-sound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Pantalla de Login/Registro -->
+    <div id="auth-screen" class="screen active">
+        <div class="auth-container">
+            <div class="logo">
+                <i class="fas fa-dumbbell"></i>
+                <h1>AliahFIT</h1>
+                <p>Entrenamiento Personal</p>
+            </div>
+            
+            <div class="auth-form-container">
+                <div class="auth-tabs">
+                    <button class="auth-tab active" data-tab="login">
+                        <i class="fas fa-sign-in-alt"></i>
+                        <span>Ingresar</span>
+                    </button>
+                    <button class="auth-tab" data-tab="register">
+                        <i class="fas fa-user-plus"></i>
+                        <span>Crear cuenta</span>
+                    </button>
+                </div>
+                
+                <form id="login-form" class="auth-form active">
+                    <div class="form-group">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="login-username" placeholder="Usuario" required>
+                    </div>
+                    <div class="form-group">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="login-password" placeholder="Contraseña" required>
+                    </div>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-sign-in-alt"></i>
+                        <span>Ingresar</span>
+                    </button>
+                </form>
+                
+                <form id="register-form" class="auth-form">
+                    <div class="form-group">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="register-username" placeholder="Usuario" required>
+                    </div>
+                    <div class="form-group">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="register-password" placeholder="Contraseña" required>
+                    </div>
+                    <div class="form-group">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="register-email" placeholder="Email" required>
+                    </div>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-user-plus"></i>
+                        <span>Crear cuenta</span>
+                    </button>
+                </form>
+                
+                <div class="demo-credentials">
+                    <p>Usuario demo: <strong>aliah</strong> | Contraseña: <strong>1234</strong></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Aplicación Principal (oculta inicialmente) -->
+    <div id="app" class="screen">
+        <!-- Header -->
+        <header class="app-header">
+            <button id="back-button" class="btn-icon back-button">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <h1 id="page-title">INICIO</h1>
+            <div class="user-menu">
+                <span id="current-user"></span>
+                <button id="logout-btn" class="btn-icon" title="Cerrar sesión">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Navegación Principal -->
+        <nav class="main-nav">
+            <button class="nav-btn active" data-page="home">
+                <i class="fas fa-home"></i>
+                <span>Inicio</span>
+            </button>
+            <button class="nav-btn" data-page="stats">
+                <i class="fas fa-chart-bar"></i>
+                <span>Estadísticas</span>
+            </button>
+            <button class="nav-btn" data-page="progress">
+                <i class="fas fa-chart-line"></i>
+                <span>Progreso</span>
+            </button>
+            <button class="nav-btn" data-page="routine">
+                <i class="fas fa-dumbbell"></i>
+                <span>Rutina</span>
+            </button>
+            <button class="nav-btn" data-page="playlist">
+                <i class="fas fa-list-ol"></i>
+                <span>Playlist</span>
+            </button>
+        </nav>
+
+        <!-- Contenido Principal -->
+        <main class="main-content">
+            <!-- Pantalla de Inicio -->
+            <div id="home-page" class="page active">
+                <!-- Tarjeta de Bienvenida con Resumen del Día -->
+                <div class="welcome-section">
+                    <div class="welcome-header">
+                        <h2><i class="fas fa-dumbbell"></i> ¡Hola, <span id="current-user-name"></span>!</h2>
+                        <div class="date-display">
+                            <i class="fas fa-calendar-day"></i>
+                            <span id="current-date"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="daily-summary">
+                        <div class="summary-item">
+                            <i class="fas fa-bullseye"></i>
+                            <div>
+                                <h4>Objetivo de Hoy</h4>
+                                <p id="todays-goal">Rutina recomendada: Full Body</p>
+                            </div>
+                        </div>
+                        <div class="summary-item">
+                            <i class="fas fa-fire"></i>
+                            <div>
+                                <h4>Energía Disponible</h4>
+                                <div class="energy-bar">
+                                    <div class="energy-fill" id="energy-level"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tarjetas de Resumen Rápido -->
+                <div class="quick-summary-cards">
+                    <div class="summary-card stat-card">
+                        <div class="summary-card-header">
+                            <i class="fas fa-chart-bar"></i>
+                            <h3>ESTADÍSTICAS</h3>
+                        </div>
+                        <div class="summary-card-body">
+                            <div class="stat-item">
+                                <span class="stat-label">Sesiones esta semana</span>
+                                <span class="stat-value" id="week-sessions">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Días consecutivos</span>
+                                <span class="stat-value" id="streak-days">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Calorías totales</span>
+                                <span class="stat-value" id="total-calories">0</span>
+                            </div>
+                            <button class="btn-card-action" onclick="aliahApp.navigateToPage('stats')">
+                                <i class="fas fa-arrow-right"></i>
+                                Ver calendario completo
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="summary-card progress-card">
+                        <div class="summary-card-header">
+                            <i class="fas fa-chart-line"></i>
+                            <h3>PROGRESO</h3>
+                        </div>
+                        <div class="summary-card-body">
+                            <div class="progress-circle-container">
+                                <div class="progress-circle" id="overall-progress">
+                                    <span class="progress-percent">0%</span>
+                                </div>
+                                <div class="progress-info">
+                                    <p>Progreso mensual</p>
+                                    <small id="progress-message">Comienza tu primer entrenamiento</small>
+                                </div>
+                            </div>
+                            <div class="mini-goals">
+                                <div class="mini-goal">
+                                    <i class="fas fa-weight"></i>
+                                    <span>Peso: <strong id="weight-progress-mini">0%</strong></span>
+                                </div>
+                                <div class="mini-goal">
+                                    <i class="fas fa-running"></i>
+                                    <span>Resistencia: <strong id="endurance-progress-mini">0%</strong></span>
+                                </div>
+                                <div class="mini-goal">
+                                    <i class="fas fa-fire"></i>
+                                    <span>Fuerza: <strong id="strength-progress-mini">0%</strong></span>
+                                </div>
+                            </div>
+                            <button class="btn-card-action" onclick="aliahApp.navigateToPage('progress')">
+                                <i class="fas fa-arrow-right"></i>
+                                Ver detalles completos
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="summary-card routine-card">
+                        <div class="summary-card-header">
+                            <i class="fas fa-dumbbell"></i>
+                            <h3>RUTINAS</h3>
+                        </div>
+                        <div class="summary-card-body">
+                            <div class="routine-summary">
+                                <div class="routine-count">
+                                    <i class="fas fa-list-check"></i>
+                                    <div>
+                                        <span class="count-number" id="routine-count">0</span>
+                                        <span class="count-label">rutinas creadas</span>
+                                    </div>
+                                </div>
+                                <div class="most-used">
+                                    <i class="fas fa-crown"></i>
+                                    <div>
+                                        <span class="routine-name" id="most-used-routine">Ninguna</span>
+                                        <small>Más usada esta semana</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="recent-routines">
+                                <h4><i class="fas fa-history"></i> Recientes</h4>
+                                <div id="recent-routines-list">
+                                    <p class="empty-text">No hay rutinas recientes</p>
+                                </div>
+                            </div>
+                            <button class="btn-card-action" onclick="aliahApp.navigateToPage('routine')">
+                                <i class="fas fa-plus"></i>
+                                Crear o administrar rutinas
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="summary-card playlist-card">
+                        <div class="summary-card-header">
+                            <i class="fas fa-play-circle"></i>
+                            <h3>PLAYLIST</h3>
+                        </div>
+                        <div class="summary-card-body">
+                            <div class="playlist-status">
+                                <div class="status-indicator" id="playlist-status-indicator">
+                                    <i class="fas fa-pause-circle"></i>
+                                    <span>No activa</span>
+                                </div>
+                                <div class="current-playlist" id="current-playlist-info">
+                                    <p>No hay rutina seleccionada</p>
+                                </div>
+                            </div>
+                            <div class="quick-playlist-actions">
+                                <button class="btn-playlist-action" onclick="aliahApp.startPlaylist()">
+                                    <i class="fas fa-play"></i>
+                                    Iniciar entrenamiento
+                                </button>
+                                <button class="btn-playlist-action secondary" onclick="aliahApp.navigateToPage('playlist')">
+                                    <i class="fas fa-list"></i>
+                                    Ver playlist completa
+                                </button>
+                            </div>
+                            <div class="last-workout">
+                                <h4><i class="fas fa-history"></i> Último entrenamiento</h4>
+                                <div id="last-workout-info">
+                                    <p>No hay entrenamientos registrados</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Sección de Acciones Rápidas -->
+                <div class="section-title">
+                    <h3><i class="fas fa-bolt"></i> ACCIONES RÁPIDAS</h3>
+                </div>
+                
+                <div class="quick-actions-grid">
+                    <button class="quick-action-btn" onclick="aliahApp.quickStartWorkout()">
+                        <i class="fas fa-play-circle"></i>
+                        <span>Entrenamiento rápido</span>
+                        <small>Comienza en 30s</small>
+                    </button>
+                    <button class="quick-action-btn" onclick="aliahApp.logRestDay()">
+                        <i class="fas fa-bed"></i>
+                        <span>Registrar descanso</span>
+                        <small>Día de recuperación</small>
+                    </button>
+                    <button class="quick-action-btn" onclick="aliahApp.addQuickWorkout()">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>Agregar entrenamiento</span>
+                        <small>Manual</small>
+                    </button>
+                    <button class="quick-action-btn" onclick="aliahApp.exportTodayData()">
+                        <i class="fas fa-download"></i>
+                        <span>Exportar datos</span>
+                        <small>Reporte diario</small>
+                    </button>
+                </div>
+                
+                <!-- Motivación del Día -->
+                <div class="motivation-section">
+                    <div class="motivation-card">
+                        <i class="fas fa-quote-left"></i>
+                        <p id="daily-motivation">La disciplina es elegir entre lo que quieres ahora y lo que quieres más.</p>
+                        <div class="motivation-author">
+                            <i class="fas fa-dumbbell"></i>
+                            <span>Motivación del día</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Próximos Objetivos -->
+                <div class="section-title">
+                    <h3><i class="fas fa-flag-checkered"></i> PRÓXIMOS OBJETIVOS</h3>
+                </div>
+                
+                <div class="upcoming-goals" id="upcoming-goals">
+                    <div class="goal-card">
+                        <i class="fas fa-trophy"></i>
+                        <div>
+                            <h4>Primera rutina completada</h4>
+                            <p>Crea y completa tu primera rutina personalizada</p>
+                        </div>
+                        <button class="btn-icon-small" onclick="aliahApp.navigateToPage('routine')">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pantalla de Estadísticas (Calendario) -->
+            <div id="stats-page" class="page">
+                <div class="calendar-header">
+                    <button id="prev-month" class="btn-icon">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <h3 id="current-month">Mayo 2023</h3>
+                    <button id="next-month" class="btn-icon">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+                
+                <div class="calendar">
+                    <div class="calendar-weekdays">
+                        <div>Lun</div>
+                        <div>Mar</div>
+                        <div>Mié</div>
+                        <div>Jue</div>
+                        <div>Vie</div>
+                        <div>Sáb</div>
+                        <div>Dom</div>
+                    </div>
+                    <div class="calendar-days" id="calendar-days">
+                        <!-- Los días se generarán dinámicamente -->
+                    </div>
+                </div>
+                
+                <div class="calendar-legend">
+                    <div class="legend-item">
+                        <span class="legend-color completed"></span>
+                        <span>Entrenamiento completado</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color rest-day"></span>
+                        <span>Día de descanso</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pantalla de Progreso -->
+            <div id="progress-page" class="page">
+                <div class="metrics-container">
+                    <div class="metric-card">
+                        <h3><i class="fas fa-weight"></i> Peso</h3>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="weight-progress" style="width: 85%;"></div>
+                        </div>
+                        <p class="metric-value">85% del objetivo</p>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <h3><i class="fas fa-running"></i> Resistencia</h3>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="endurance-progress" style="width: 70%;"></div>
+                        </div>
+                        <p class="metric-value">70% del objetivo</p>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <h3><i class="fas fa-fire"></i> Fuerza</h3>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="strength-progress" style="width: 90%;"></div>
+                        </div>
+                        <p class="metric-value">90% del objetivo</p>
+                    </div>
+                </div>
+                
+                <div class="section-title">
+                    <h3><i class="fas fa-bullseye"></i> Objetivos mensuales</h3>
+                </div>
+                
+                <div class="goals-list">
+                    <div class="goal-item">
+                        <i class="fas fa-check-circle"></i>
+                        <div>
+                            <h4>Completar 12 sesiones</h4>
+                            <p>8/12 completadas</p>
+                        </div>
+                        <div class="goal-progress">
+                            <div class="progress-bar" style="width: 67%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="goal-item">
+                        <i class="fas fa-dumbbell"></i>
+                        <div>
+                            <h4>Aumentar peso muerto 10kg</h4>
+                            <p>+6kg logrado</p>
+                        </div>
+                        <div class="goal-progress">
+                            <div class="progress-bar" style="width: 60%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pantalla de Rutina (CREACIÓN DE ESTRUCTURA) -->
+            <div id="routine-page" class="page">
+                <div class="routine-page-container">
+                    <!-- Vista de Lista -->
+                    <div id="routine-list-view">
+                        <div class="routine-page-header">
+                            <h3><i class="fas fa-dumbbell"></i> MIS RUTINAS</h3>
+                            <button class="btn-primary" id="create-routine-btn">
+                                <i class="fas fa-plus"></i>
+                                <span>Crear Rutina</span>
+                            </button>
+                        </div>
+                        
+                        <div class="routines-grid" id="routines-grid">
+                            <!-- Las rutinas se cargarán aquí -->
+                        </div>
+                    </div>
+                    
+                    <!-- Vista de Creación/Edición -->
+                    <div id="routine-creation-view" style="display: none;">
+                        <div class="routine-creation-header">
+                            <button class="btn-icon back-to-list-btn">
+                                <i class="fas fa-arrow-left"></i>
+                            </button>
+                            <h3 id="creation-title">Crear Nueva Rutina</h3>
+                        </div>
+                        
+                        <!-- Paso 1: Información básica -->
+                        <div class="creation-step active" id="step-basic">
+                            <div class="form-group">
+                                <i class="fas fa-heading"></i>
+                                <input type="text" id="new-routine-name" placeholder="Nombre de la rutina" required>
+                            </div>
+                            <div class="form-group">
+                                <i class="fas fa-align-left"></i>
+                                <textarea id="new-routine-description" placeholder="Descripción (opcional)" rows="3"></textarea>
+                            </div>
+                            <div class="form-actions">
+                                <button class="btn-primary next-step" data-step="rounds">
+                                    <i class="fas fa-forward"></i>
+                                    <span>Siguiente: Agregar Rondas</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Paso 2: Rondas -->
+                        <div class="creation-step" id="step-rounds">
+                            <div class="section-title">
+                                <h4><i class="fas fa-redo"></i> Rondas de la Rutina</h4>
+                                <button class="btn-primary" id="add-round-creation" type="button">
+                                    <i class="fas fa-plus"></i>
+                                    <span>Agregar Ronda</span>
+                                </button>
+                            </div>
+                            
+                            <!-- CONTENEDOR CORREGIDO CON ID CORRECTO -->
+                            <div class="rounds-creation-list" id="rounds-creation-list">
+                                <div class="empty-state">
+                                    <i class="fas fa-redo"></i>
+                                    <p>No hay rondas creadas</p>
+                                    <p>Haz clic en "Agregar Ronda" para comenzar</p>
+                                </div>
+                            </div>
+                            
+                            <div class="form-actions">
+                                <button class="btn-secondary prev-step" data-step="basic" type="button">
+                                    <i class="fas fa-backward"></i>
+                                    <span>Volver</span>
+                                </button>
+                                <button class="btn-primary" id="save-routine-btn" type="button">
+                                    <i class="fas fa-save"></i>
+                                    <span>Guardar Rutina</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pantalla de Playlist (SOLO REPRODUCCIÓN) -->
+            <div id="playlist-page" class="page">
+                <div class="playlist-container">
+                    <div class="playlist-header-modern">
+                        <div class="playlist-header-left">
+                            <i class="fas fa-dumbbell"></i>
+                            <h3>PLAYLIST DE ENTRENAMIENTO</h3>
+                        </div>
+                        <div class="playlist-header-right">
+                            <button class="btn-icon-modern" id="sound-toggle" title="Alternar sonidos">
+                                <i class="fas fa-volume-up"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="playlist-content">
+                        <div class="routine-selector-modern">
+                            <div class="selector-header">
+                                <i class="fas fa-list-check"></i>
+                                <h4>SELECCIONAR RUTINA</h4>
+                            </div>
+                            <select id="routine-select" class="modern-select">
+                                <option value="">Selecciona una rutina</option>
+                            </select>
+                            <div class="selector-actions">
+                                <button class="btn-outline" id="refresh-routines-btn">
+                                    <i class="fas fa-sync-alt"></i>
+                                    <span>Actualizar lista</span>
+                                </button>
+                                <button class="btn-outline" id="goto-create-routine">
+                                    <i class="fas fa-plus"></i>
+                                    <span>Crear nueva</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="routine-info-modern">
+                            <div class="routine-info-card">
+                                <div class="routine-info-header">
+                                    <h4 id="routine-name">SIN RUTINA SELECCIONADA</h4>
+                                    <div class="routine-actions">
+                                        <button class="btn-icon-small play-routine" title="Reproducir rutina">
+                                            <i class="fas fa-play"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="routine-stats-modern">
+                                    <div class="stat-modern">
+                                        <i class="fas fa-clock"></i>
+                                        <div>
+                                            <span class="stat-value" id="routine-duration">0</span>
+                                            <span class="stat-label">min</span>
+                                        </div>
+                                    </div>
+                                    <div class="stat-modern">
+                                        <i class="fas fa-redo"></i>
+                                        <div>
+                                            <span class="stat-value" id="routine-rounds">0</span>
+                                            <span class="stat-label">rondas</span>
+                                        </div>
+                                    </div>
+                                    <div class="stat-modern">
+                                        <i class="fas fa-fire"></i>
+                                        <div>
+                                            <span class="stat-value" id="routine-calories">0</span>
+                                            <span class="stat-label">cal</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="rounds-container-modern" id="rounds-container">
+                            <div class="empty-state">
+                                <i class="fas fa-dumbbell"></i>
+                                <p>No hay rutina seleccionada</p>
+                                <p>Selecciona una rutina de la lista</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="playlist-controls-modern">
+                    <button id="start-playlist" class="btn-control btn-play">
+                        <i class="fas fa-play"></i>
+                        <span>Iniciar</span>
+                    </button>
+                    <button id="pause-playlist" class="btn-control" disabled>
+                        <i class="fas fa-pause"></i>
+                        <span>Pausar</span>
+                    </button>
+                    <button id="restart-playlist" class="btn-control" disabled>
+                        <i class="fas fa-redo"></i>
+                        <span>Reiniciar</span>
+                    </button>
+                    <button id="stop-playlist" class="btn-control" disabled>
+                        <i class="fas fa-stop"></i>
+                        <span>Detener</span>
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- Reproductor de Playlist (5 COLUMNAS RESPONSIVE) -->
+        <div id="playlist-player" class="playlist-player minimized">
+            <div class="player-header-modern">
+                <div class="player-title">
+                    <i class="fas fa-play-circle"></i>
+                    <h4>EN ENTRENAMIENTO</h4>
+                </div>
+                <div class="player-actions">
+                    <button id="minimize-player" class="btn-icon-player" title="Minimizar">
+                        <i class="fas fa-window-minimize"></i>
+                    </button>
+                    <button id="close-player" class="btn-icon-player" title="Cerrar">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="player-content-modern">
+                <!-- DISEÑO RESPONSIVE 5 COLUMNAS -->
+                <div class="player-grid-5cols">
+                    <!-- Columna 1: Ronda y Calorías -->
+                    <div class="player-col-stats">
+                        <div class="stat-box">
+                            <i class="fas fa-redo"></i>
+                            <div class="stat-content">
+                                <div class="stat-label">Ronda</div>
+                                <div class="stat-value" id="player-current-round">0/0</div>
+                            </div>
+                        </div>
+                        <div class="stat-box">
+                            <i class="fas fa-fire"></i>
+                            <div class="stat-content">
+                                <div class="stat-label">Calorías</div>
+                                <div class="stat-value" id="player-current-calories">0</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Columna 2: Duración y Total -->
+                    <div class="player-col-stats">
+                        <div class="stat-box">
+                            <i class="fas fa-clock"></i>
+                            <div class="stat-content">
+                                <div class="stat-label">Duración</div>
+                                <div class="stat-value" id="player-routine-duration">0m</div>
+                            </div>
+                        </div>
+                        <div class="stat-box">
+                            <i class="fas fa-history"></i>
+                            <div class="stat-content">
+                                <div class="stat-label">Total</div>
+                                <div class="stat-value" id="player-total-time">0m</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Columna 3 (CENTRAL): Ejercicio Actual -->
+                    <div class="player-col-main">
+                        <div class="current-exercise-card">
+                            <div class="exercise-header">
+                                <h3 id="current-exercise-name">SELECCIONA RUTINA</h3>
+                                <div class="exercise-type-tag" id="current-exercise-type">
+                                    <i class="fas fa-clock"></i>
+                                    <span>Esperando...</span>
+                                </div>
+                            </div>
+                            
+                            <div class="main-timer" id="current-exercise-time">
+                                00:00
+                            </div>
+                            
+                            <!-- Temporizador de descanso -->
+                            <div class="rest-timer-wrapper" id="rest-timer-display" style="display: none;">
+                                <i class="fas fa-coffee"></i>
+                                <span>Descanso: <strong id="rest-time">0s</strong></span>
+                            </div>
+                            
+                            <!-- Barra de progreso del ejercicio -->
+                            <div class="exercise-progress">
+                                <div class="progress-bar-horizontal">
+                                    <div class="progress-fill" id="current-exercise-progress" style="width: 0%"></div>
+                                </div>
+                                <div class="progress-text" id="exercise-progress-text">
+                                    <span id="progress-current">Ejercicio 0</span>
+                                    <span id="progress-total">de 0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Columna 4: Tipo y Valor -->
+                    <div class="player-col-stats">
+                        <div class="stat-box">
+                            <i class="fas fa-dumbbell"></i>
+                            <div class="stat-content">
+                                <div class="stat-label">Tipo</div>
+                                <div class="stat-value" id="exercise-type-value">-</div>
+                            </div>
+                        </div>
+                        <div class="stat-box">
+                            <i class="fas fa-bullseye"></i>
+                            <div class="stat-content">
+                                <div class="stat-label">Valor</div>
+                                <div class="stat-value" id="exercise-value-display">-</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Columna 5: Progreso y Completados -->
+                    <div class="player-col-stats">
+                        <div class="stat-box">
+                            <i class="fas fa-chart-line"></i>
+                            <div class="stat-content">
+                                <div class="stat-label">Progreso</div>
+                                <div class="stat-value" id="overall-progress-percent">0%</div>
+                            </div>
+                        </div>
+                        <div class="stat-box">
+                            <i class="fas fa-list-ol"></i>
+                            <div class="stat-content">
+                                <div class="stat-label">Completados</div>
+                                <div class="stat-value" id="exercises-completed">0/0</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Fila de Controles (ocupa todas las columnas) -->
+                    <div class="player-controls-row">
+                        <button class="control-btn nav-btn prev-btn" id="player-prev-btn">
+                            <i class="fas fa-step-backward"></i>
+                            <div class="btn-exercise-name" id="prev-exercise-name">
+                                ANTERIOR
+                            </div>
+                        </button>
+                        
+                        <button class="control-btn main-btn" id="player-pause-btn">
+                            <i class="fas fa-play" id="pause-icon"></i>
+                            <div class="btn-exercise-name" id="pause-text">
+                                PLAY
+                            </div>
+                        </button>
+                        
+                        <button class="control-btn nav-btn next-btn" id="player-next-btn">
+                            <i class="fas fa-step-forward"></i>
+                            <div class="btn-exercise-name" id="next-exercise-name">
+                                SIGUIENTE
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para calificar rutina (3 niveles) -->
+    <div id="rating-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-star"></i> Calificar Rutina</h3>
+                <button class="btn-icon close-rating-modal" id="close-rating-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="rating-section">
+                    <p>¿Cómo calificarías esta rutina?</p>
+                    <div class="simple-rating">
+                        <button class="rating-btn" data-rating="1">
+                            <i class="fas fa-frown"></i>
+                            <span>Difícil</span>
+                        </button>
+                        <button class="rating-btn" data-rating="2">
+                            <i class="fas fa-meh"></i>
+                            <span>Adecuada</span>
+                        </button>
+                        <button class="rating-btn" data-rating="3">
+                            <i class="fas fa-smile"></i>
+                            <span>Fácil</span>
+                        </button>
+                    </div>
+                    <div class="rating-text">
+                        <span id="rating-text">Selecciona una calificación</span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="routine-notes">Notas (opcional):</label>
+                    <textarea id="routine-notes" placeholder="¿Cómo te sentiste durante el entrenamiento?"></textarea>
+                </div>
+                
+                <div class="modal-actions">
+                    <button id="save-rating" class="btn-primary">
+                        <i class="fas fa-save"></i>
+                        <span>Guardar</span>
+                    </button>
+                    <button id="skip-rating" class="btn-secondary">
+                        <i class="fas fa-forward"></i>
+                        <span>Saltar</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+</body>
+</html>
